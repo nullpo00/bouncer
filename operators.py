@@ -3,7 +3,6 @@
 # type: ignore
 
 import bpy
-from typing_extensions import override
 from . import properties
 
 class ApplyAnimationOperator(bpy.types.Operator):
@@ -79,7 +78,7 @@ class ApplyAnimationOperator(bpy.types.Operator):
 
         action.update_tag()
 
-    @override
+    # override
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -90,7 +89,7 @@ class ApplyAnimationOperator(bpy.types.Operator):
         layout.prop(self, "frame_ofs")
         layout.prop(self, "duration")
    
-    @override
+    # override
     def execute(self, context):
 
         active_object = context.active_object
@@ -190,7 +189,7 @@ class ApplyAnimationOperator(bpy.types.Operator):
 
         return {"FINISHED"}
     
-    @override
+    # override
     def invoke(self, context, event):
         props = context.scene.bounce_props
 
@@ -207,7 +206,7 @@ class ResetPropertiesOperator(bpy.types.Operator):
     bl_label = "Reset Properties"
     bl_options = {"REGISTER", "UNDO"}
 
-    @override
+    # override
     def execute(self, context):
 
         props = context.scene.bounce_props

@@ -3,7 +3,6 @@
 # type: ignore
 
 import bpy
-from typing_extensions import override
 
 class BouncerUiPanel(bpy.types.Panel):
     bl_idname = "ANIMATION_PT_bouncer_ui"
@@ -12,7 +11,7 @@ class BouncerUiPanel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Bouncer"
 
-    @override
+    # override
     def draw(self, context):
 
         layout = self.layout

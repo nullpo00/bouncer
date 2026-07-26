@@ -6,7 +6,7 @@ bl_info = {
     "name" : "Bouncer",
     "author" : "NullPo",
     "version" : (1, 0, 0),
-    "blender" : (5, 00, 0),
+    "blender" : (5, 0, 0),
     "location" : "N-Panel",
     "description" : "Easily make a bounce animation",
     "warning" : "Work in progress",
