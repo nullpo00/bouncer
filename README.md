@@ -3,7 +3,7 @@
 
 This is a Blender add-on that allows you to easily add bounce animations.
 
-# インストール / Install
+# インストール / Installation
 * Releasesからzipをダウンロード
 * Edit > Preferences > Add-ons > Install from Disk からダウンロードしたzipを選択してインストール
 
