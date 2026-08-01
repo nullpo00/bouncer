@@ -9,7 +9,7 @@ bl_info = {
     "blender" : (5, 0, 0),
     "location" : "N-Panel",
     "description" : "Easily make a bounce animation",
-    "warning" : "Work in progress",
+    "warning" : "",
     "category" : "Animation"
 }
 
@@ -35,11 +35,14 @@ else:
 # 日本語翻訳用
 translation_dict = {
     "ja_JP": {
+        ("*", "Transform Offset"): "トランスフォームオフセット",
         ("*", "Animation Settings"): "アニメーション設定",
         ("*", "Use Current Frame"): "現在のフレームを使用",
         ("BouncerPanel", "Amplitude"): "振幅",
         ("BouncerPanel", "Period"): "周期",
-        ("BouncerPanel", "Frequency"): "周波数",
+        ("*", "Sort Option"): "ソートオプション",
+        ("*", "Use Sort Object"): "ソートオブジェクトを使用",
+        ("*", "Sort Origin"): "原点オブジェクト",
         ("*", "Apply Animation"): "アニメーションを適用",
         ("*", "Reset Properties"): "プロパティをリセット"
     }
@@ -54,8 +57,8 @@ def register():
             for cls in mod.register_classes:
                 bpy.utils.register_class(cls)
                 
-            if hasattr(mod, "construct_pointer_property"):
-                mod.construct_pointer_property()
+        if hasattr(mod, "init"):
+            mod.init()
 
 def unregister():
     bpy.app.translations.unregister(__name__)
@@ -66,8 +69,8 @@ def unregister():
             for cls in mod.register_classes:
                 bpy.utils.unregister_class(cls)
 
-            if hasattr(mod, "delete_pointer_property"):
-                mod.delete_pointer_property()
+        if hasattr(mod, "finalize"):
+            mod.finalize()
 
 
 if __name__ == "__main__":

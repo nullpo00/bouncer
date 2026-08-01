@@ -30,6 +30,24 @@ class BounceProperties(bpy.types.PropertyGroup):
         default=True
     )
 
+    sort_option_enabled: bpy.props.BoolProperty(
+        name="Sort Option",
+        description="Enable sort option",
+        default=False
+    )
+
+    sort_reverse_enabled: bpy.props.BoolProperty(
+        name="Reverse",
+        description="Enable reverse sort",
+        default=False
+    )
+
+    use_sort_obj: bpy.props.BoolProperty(
+        name="Use Sort Object",
+        description="Use any object for sort of Frame Offset",
+        default=False
+    )
+
     location_ofs: bpy.props.FloatVectorProperty(
         name="",
         subtype="TRANSLATION",
@@ -87,12 +105,41 @@ class BounceProperties(bpy.types.PropertyGroup):
         step=1
     )
 
+    sort_origin: bpy.props.PointerProperty(
+        name="Sort Origin",
+        description="Sort by distance from this object",
+        type=bpy.types.Object
+    )
+
+    sort_type: bpy.props.EnumProperty(
+        name="Sort Type",
+        description="Sort Type",
+        items=[
+            ("DISTANCE", "Distance", "Distance", "", 0),
+            ("LOCATION", "Location", "Location", "", 1),
+            ("ROTATION", "Rotation", "Rotation", "", 2),
+            ("SCALE", "Scale", "Scale", "", 3)
+        ],
+        default="DISTANCE"
+    )
+
+    sort_axis: bpy.props.EnumProperty(
+        name="Sort Axis",
+        description="Sort Axis",
+        items=[
+            ("AXIS_X", "X", "Axis X", "", 0),
+            ("AXIS_Y", "Y", "Axis Y", "", 1),
+            ("AXIS_Z", "Z", "Axis Z", "", 2)
+        ],
+        default="AXIS_X"
+    )
+
 register_classes = [
     BounceProperties
 ]
     
-def construct_pointer_property():
+def init():
     bpy.types.Scene.bounce_props = bpy.props.PointerProperty(type=BounceProperties)
 
-def delete_pointer_property():
+def finalize():
     del bpy.types.Scene.bounce_props

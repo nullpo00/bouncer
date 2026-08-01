@@ -18,8 +18,9 @@ class BouncerUiPanel(bpy.types.Panel):
         scene = context.scene
         props = scene.bounce_props
 
+        # Transform Offset
         header, body = layout.panel("transform_settings", default_closed=False)
-        header.label(text="Transform")
+        header.label(text="Transform Offset")
         if body:
 
             # Location
@@ -43,12 +44,12 @@ class BouncerUiPanel(bpy.types.Panel):
             col.prop(props, "scale_ofs")
             col.active = props.scale_enabled
 
-        header, body = layout.panel("animation_settings", default_closed=False)
+        # Animation Settings
+        header, body = layout.panel(idname="animation_settings", default_closed=False)
         header.label(text="Animation Settings")
 
         if body:
-            row = body.row()
-            box = row.box()
+            box = body.row().box()
             box.prop(props, "use_current_frame")
             if not props.use_current_frame:
                 box.prop(props, "start_frame")
@@ -59,12 +60,35 @@ class BouncerUiPanel(bpy.types.Panel):
             col.prop(props, "anim_duration")
             col.prop(props, "frame_ofs")
 
-        layout.separator()
+            # Sort Option
+            header, body = body.panel(idname="sort_option", default_closed=True)
+            header.label(text="Sort Option")
+            if body:
+                body.use_property_decorate = False
+                body.use_property_split = True
+                # body.active = props.sort_option_enabled
+                box = body.box()
+                box.row().prop(props, "sort_type")
+                if props.sort_type != "DISTANCE":
+                    box.row().prop(props, "sort_axis", text="Axis")
+                box.row().prop(props, "sort_reverse_enabled")
+                box.use_property_split = False
+                box.row().prop(props, "use_sort_obj", icon="TRIA_DOWN" if props.use_sort_obj else "TRIA_RIGHT")
+                if props.use_sort_obj:
+                    box = box.box()
+                    box.use_property_split = True
+                    box.row().prop(props, "sort_origin")
+
+        # layout.separator(type="LINE")
+
+        # Apply
         layout.operator(
             "bouncer.apply_animation_operator", 
             icon="PREVIEW_RANGE", 
             text=bpy.app.translations.pgettext_iface("Apply Animation")
         )
+
+        # Reset
         layout.operator(
             "bouncer.reset_properties_operator", 
             icon="FILE_REFRESH", 

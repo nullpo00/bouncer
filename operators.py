@@ -92,6 +92,7 @@ class ApplyAnimationOperator(bpy.types.Operator):
     # override
     def execute(self, context):
 
+        props = context.scene.bounce_props
         active_object = context.active_object
         selected_objects = context.selected_objects
 
@@ -99,19 +100,37 @@ class ApplyAnimationOperator(bpy.types.Operator):
             self.report({"INFO"}, "Object is not selected or active object is None")
             return{"CANCELLED"}
 
-        # Sort by distance from active object
-        # アクティブオブジェクトからの距離でソート
-        pt_x = active_object.matrix_world.translation.x
-        pt_y = active_object.matrix_world.translation.y
-        pt_z = active_object.matrix_world.translation.z
+        if props.use_sort_obj and not props.sort_origin:
+            self.report({"INFO"}, "Sort Origin is not selected")
+            return{"CANCELLED"}
 
-        selected_objects.sort(
-            key=lambda obj: (obj.matrix_world.translation.x - pt_x) ** 2 
-            + (obj.matrix_world.translation.y - pt_y) ** 2 
-            + (obj.matrix_world.translation.z - pt_z) ** 2
-        )
+        sort_obj = props.sort_origin if props.use_sort_obj else active_object
+        reverse = props.sort_reverse_enabled
+        sort_key = None
+        
+        # Sort
+        if props.sort_type == "DISTANCE":
+            # Sort by distance
+            pt_x = sort_obj.matrix_world.translation.x
+            pt_y = sort_obj.matrix_world.translation.y
+            pt_z = sort_obj.matrix_world.translation.z
 
-        props = context.scene.bounce_props
+            sort_key = lambda obj: ((obj.matrix_world.translation.x - pt_x) ** 2 
+                + (obj.matrix_world.translation.y - pt_y) ** 2 
+                + (obj.matrix_world.translation.z - pt_z) ** 2)
+        else:
+            idx = context.scene.bounce_props.bl_rna.properties["sort_axis"].enum_items[props.sort_axis].value
+            match props.sort_type:
+                case "LOCATION":
+                    sort_key = lambda obj: (obj.location[idx] - sort_obj.location[idx])
+                case "ROTATION":
+                    sort_key = lambda obj: (obj.rotation_euler[idx] - sort_obj.rotation_euler[idx])
+                case "SCALE":
+                    sort_key = lambda obj: (obj.scale[idx] - sort_obj.scale[idx])
+
+        if sort_key:
+            selected_objects.sort(key=sort_key, reverse=reverse)
+
         default_interpolation = context.preferences.edit.keyframe_new_interpolation_type
         st_frame = context.scene.frame_current if props.use_current_frame else props.start_frame
         
