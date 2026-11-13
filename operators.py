@@ -4,6 +4,7 @@
 
 import bpy
 from . import properties
+from bpy_extras import anim_utils
 
 class ApplyAnimationOperator(bpy.types.Operator):
     bl_idname = "bouncer.apply_animation_operator"
@@ -33,23 +34,67 @@ class ApplyAnimationOperator(bpy.types.Operator):
         step=1
     )
 
-    # Insert keyframe for XYZ
-    # XYZへキーフレーム追加
-    def insert_keyframe(self, object: bpy.types.Object, data_path: str, frame: int, values: list[tuple[float, str]]) -> None:
+     # Insert keyframe for XYZ
+    def insert_keyframe(self, obj: bpy.types.Object, data_path: str, frame: int, values: list[tuple[float, str]]) -> None:
 
-        if object.animation_data is None:
-            object.animation_data_create()
+        # X
+        exec(f"obj.{data_path}.x = {values[0][0]}")
+        print(values[0][0])
+        obj.keyframe_insert(data_path=data_path, index=0, frame=frame)
+        ad = obj.animation_data
+        channelbag = anim_utils.action_get_channelbag_for_slot(ad.action, ad.action_slot)
+        fc_x = channelbag.fcurves.find(data_path, index=0)
+        kf = [kf for kf in fc_x.keyframe_points if kf.co[0] == frame][0]
+        kf.interpolation = values[0][1]
+        if values[0][1] == "ELASTIC":
+            kf.amplitude = self.amp
+            kf.period = self.period
 
-        action = object.animation_data.action
-        if action is None:
-            action = bpy.data.actions.new(name=object.name + "Action")
-            object.animation_data.action = action
+        # Y
+        exec(f"obj.{data_path}.y = {values[1][0]}")
+        obj.keyframe_insert(data_path=data_path, index=1, frame=frame)
+        ad = obj.animation_data
+        channelbag = anim_utils.action_get_channelbag_for_slot(ad.action, ad.action_slot)
+        fc_y = channelbag.fcurves.find(data_path, index=1)
+        kf = [kf for kf in fc_y.keyframe_points if kf.co[0] == frame][0]
+        kf.interpolation = values[1][1]
+        if values[1][1] == "ELASTIC":
+            kf.amplitude = self.amp
+            kf.period = self.period
+        # Z
+        exec(f"obj.{data_path}.z = {values[2][0]}")
+        obj.keyframe_insert(data_path=data_path, index=2, frame=frame)
+        ad = obj.animation_data
+        channelbag = anim_utils.action_get_channelbag_for_slot(ad.action, ad.action_slot)
+        fc_z = channelbag.fcurves.find(data_path, index=2)
+        kf = [kf for kf in fc_z.keyframe_points if kf.co[0] == frame][0]
+        kf.interpolation = values[2][1]
+        if values[2][1] == "ELASTIC":
+            kf.amplitude = self.amp
+            kf.period = self.period
+
+        # Update
+        fc_x.update()
+        fc_y.update()
+        fc_z.update()
+
+        ad.action.update_tag()
+
+    # Insert keyframe for XYZ (Fast Mode)
+    def insert_keyframe_fast(self, obj: bpy.types.Object, data_path: str, frame: int, values: list[tuple[float, str]]) -> None:
+        
+        if obj.animation_data is None:
+            obj.animation_data_create()
+
+        ad = obj.animation_data
+        if ad.action is None:
+            ad.action = bpy.data.actions.new(name=obj.name + "Action")
 
         # Get F-Curve info
-        # Fカーブ情報取得
-        fc_x = action.fcurve_ensure_for_datablock(datablock=object, data_path=data_path, index=0)
-        fc_y = action.fcurve_ensure_for_datablock(datablock=object, data_path=data_path, index=1)
-        fc_z = action.fcurve_ensure_for_datablock(datablock=object, data_path=data_path, index=2)
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(ad.action, ad.action_slot)
+        fc_x = channelbag.fcurves.ensure(data_path, index=0)
+        fc_y = channelbag.fcurves.ensure(data_path, index=1)
+        fc_z = channelbag.fcurves.ensure(data_path, index=2)
 
         # X
         kf = fc_x.keyframe_points.insert(frame=frame, value=values[0][0])
@@ -76,9 +121,9 @@ class ApplyAnimationOperator(bpy.types.Operator):
         fc_y.update()
         fc_z.update()
 
-        action.update_tag()
+        ad.action.update_tag()
 
-    # override
+    # Override
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -89,7 +134,7 @@ class ApplyAnimationOperator(bpy.types.Operator):
         layout.prop(self, "frame_ofs")
         layout.prop(self, "duration")
    
-    # override
+    # Override
     def execute(self, context):
 
         props = context.scene.bounce_props
@@ -138,11 +183,15 @@ class ApplyAnimationOperator(bpy.types.Operator):
             
             if  isinstance(obj, bpy.types.Object) and hasattr(obj, "keyframe_insert"):
                 frame = st_frame + self.frame_ofs * cnt
+                loc = obj.location.copy()
+                rot = obj.rotation_euler.copy()
+                scl = obj.scale.copy()
+
+                exec_func = self.insert_keyframe_fast if props.fast_mode_enabled else self.insert_keyframe
 
                 # Location keyframe
                 if props.location_enabled:
                     default_val = props.bl_rna.properties["location_ofs"].default_array
-                    # キーフレーム情報格納
                     # values = [(X keyframe value, X interpolation), Y..., Z...]
                     values = [
                         (
@@ -158,9 +207,9 @@ class ApplyAnimationOperator(bpy.types.Operator):
                             default_interpolation if props.location_ofs[2] == default_val[2] else "ELASTIC"
                         )
                     ]
-                    self.insert_keyframe(object=obj, data_path="location", frame=frame, values=values)
-                    values = [(item, default_interpolation) for item in list(obj.location)]
-                    self.insert_keyframe(object=obj, data_path="location", frame=frame + self.duration, values=values)
+                    exec_func(obj=obj, data_path="location", frame=frame, values=values)
+                    values = [(item, default_interpolation) for item in list(loc)]
+                    exec_func(obj=obj, data_path="location", frame=frame + self.duration, values=values)
 
                 # Rotation keyframe
                 if props.rotation_enabled:
@@ -179,9 +228,9 @@ class ApplyAnimationOperator(bpy.types.Operator):
                             default_interpolation if props.rotation_ofs[2] == default_val[2] else "ELASTIC"
                         )
                     ]
-                    self.insert_keyframe(object=obj, data_path="rotation_euler", frame=frame, values=values)
-                    values = [(item, default_interpolation) for item in list(obj.rotation_euler)]
-                    self.insert_keyframe(object=obj, data_path="rotation_euler", frame=frame + self.duration, values=values)
+                    exec_func(obj=obj, data_path="rotation_euler", frame=frame, values=values)
+                    values = [(item, default_interpolation) for item in list(rot)]
+                    exec_func(obj=obj, data_path="rotation_euler", frame=frame + self.duration, values=values)
 
                 # Scale keyframe
                 if props.scale_enabled:
@@ -200,15 +249,15 @@ class ApplyAnimationOperator(bpy.types.Operator):
                             default_interpolation if props.scale_ofs[2] == default_val[2] else "ELASTIC"
                         )
                     ]
-                    self.insert_keyframe(object=obj, data_path="scale", frame=frame, values=values)
-                    values = [(item, default_interpolation) for item in list(obj.scale)]
-                    self.insert_keyframe(object=obj, data_path="scale", frame=frame + self.duration, values=values)
+                    exec_func(obj=obj, data_path="scale", frame=frame, values=values)
+                    values = [(item, default_interpolation) for item in list(scl)]
+                    exec_func(obj=obj, data_path="scale", frame=frame + self.duration, values=values)
 
                 obj.update_tag()
 
         return {"FINISHED"}
     
-    # override
+    # Override
     def invoke(self, context, event):
         props = context.scene.bounce_props
 
@@ -225,12 +274,12 @@ class ResetPropertiesOperator(bpy.types.Operator):
     bl_label = "Reset Properties"
     bl_options = {"REGISTER", "UNDO"}
 
-    # override
+    # Override
     def execute(self, context):
 
         props = context.scene.bounce_props
 
-        # アノテーションからプロパティ名を取得
+        # Get properties name
         prop_names = list(properties.BounceProperties.__annotations__.keys())
 
         # Reset

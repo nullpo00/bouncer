@@ -48,6 +48,12 @@ class BounceProperties(bpy.types.PropertyGroup):
         default=False
     )
 
+    fast_mode_enabled: bpy.props.BoolProperty(
+        name="Fast Mode",
+        description="Use fast mode. (Unstable)",
+        default=False
+    )
+
     location_ofs: bpy.props.FloatVectorProperty(
         name="",
         subtype="TRANSLATION",

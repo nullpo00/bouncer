@@ -11,7 +11,7 @@ class BouncerUiPanel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Bouncer"
 
-    # override
+    # Override
     def draw(self, context):
 
         layout = self.layout
@@ -24,7 +24,7 @@ class BouncerUiPanel(bpy.types.Panel):
         if body:
 
             # Location
-            row = body .row()
+            row = body.row()
             row.prop(props, "location_enabled")
             col = body.column()
             col.prop(props, "location_ofs")
@@ -81,8 +81,11 @@ class BouncerUiPanel(bpy.types.Panel):
 
         # layout.separator(type="LINE")
 
+        row = layout.row(align=True)
+        row.prop(props, "fast_mode_enabled", text="", icon="ERROR")
+
         # Apply
-        layout.operator(
+        row.operator(
             "bouncer.apply_animation_operator", 
             icon="PREVIEW_RANGE", 
             text=bpy.app.translations.pgettext_iface("Apply Animation")
